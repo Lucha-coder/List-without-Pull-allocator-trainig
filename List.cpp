@@ -12,6 +12,8 @@ class List {
         BaseNode_* next;
 
         BaseNode_() : prev(nullptr), next(nullptr) {}
+
+        virtual ~BaseNode_() = default;
     };
 
     struct Node : BaseNode_ {
@@ -318,6 +320,9 @@ List<T>::List(List&& other) : List() {  // NOLINT
 
 template <typename T>
 List<T>& List<T>::operator=(const List& other) {
+    if (this == &other) {
+        return *this;
+    }
     List copy(other);
     swap(copy);
     return *this;
@@ -338,7 +343,7 @@ List<T>::~List() noexcept {
 
     while (current != tail_) {
         BaseNode_* nextNode = current->next;
-        delete static_cast<Node*>(current);
+        delete current;
         current = nextNode;
     }
 
