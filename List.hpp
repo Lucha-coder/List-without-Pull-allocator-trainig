@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <initializer_list>
 #include <iterator>
 #include <memory>
 #include <type_traits>
@@ -165,6 +166,8 @@ class List {
    public:
     List() : sz_(0), head_(new BaseNode_()), tail_(head_) {}
 
+    List(std::initializer_list<T> list);
+
     explicit List(size_t n);
     List(size_t n, const T& obj);
 
@@ -179,6 +182,9 @@ class List {
     void PushFront(const T& obj);
     void PushFront(T&& obj);
 
+    void PopFront() noexcept;
+    void PopBack() noexcept;
+
     template <typename... Args>
     void EmplaceBack(Args&&... args);
 
@@ -186,6 +192,8 @@ class List {
     void EmplaceFront(Args&&... args);
 
     void swap(List& other) noexcept;
+
+    bool Empty() const noexcept;
 
     ~List() noexcept;
 };
@@ -246,10 +254,50 @@ void List<T>::PushFront(T&& obj) {
 }
 
 template <typename T>
+void List<T>::PopFront() noexcept {
+    if (Empty()) {
+        return;
+    }
+    BaseNode_* nextNead = head_->next;
+    delete head_;
+    head_ = nextNead;
+    head_->prev = nullptr;
+    --sz_;
+}
+
+template <typename T>
+void List<T>::PopBack() noexcept {
+    if (Empty()) {
+        return;
+    }
+    BaseNode_* next_tail_prev = tail_->prev->prev;
+    if (next_tail_prev == nullptr) {
+        delete tail_->prev;
+        tail_->prev = next_tail_prev;
+        head_ = tail_;
+        --sz_;
+        return;
+    }
+    next_tail_prev->next = tail_;
+    delete tail_->prev;
+    tail_->prev = next_tail_prev;
+    --sz_;
+}
+
+template <typename T>
 void List<T>::swap(List<T>& other) noexcept {
     std::swap(sz_, other.sz_);
     std::swap(head_, other.head_);
     std::swap(tail_, other.tail_);
+}
+
+template <typename T>
+List<T>::List(std::initializer_list<T> list) : List() {
+    auto it = list.begin();
+    while (it != list.end()) {
+        EmplaceBack(*it);
+        ++it;
+    }
 }
 
 template <typename T>
@@ -297,6 +345,11 @@ List<T>& List<T>::operator=(List&& other) {  // NOLINT
         swap(moved);
     }
     return *this;
+}
+
+template <typename T>
+bool List<T>::Empty() const noexcept {
+    return sz_ == 0;  // head_ == tail_;
 }
 
 template <typename T>
